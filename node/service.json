@@ -1,0 +1,16 @@
+{
+  "stack": "nodejs",
+  "memory": 512,
+  "ttl": 43200,
+  "timeout": 300,
+  "routes": {
+    "taxSimulation": {
+      "path": "/app/tax-provider/middleware",
+      "public": true
+    },
+    "orderInvoice": {
+      "path": "/app/tax-provider/oms/invoice",
+      "public": true
+    }
+  }
+}
