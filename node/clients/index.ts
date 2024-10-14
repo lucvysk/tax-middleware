@@ -7,6 +7,7 @@ import { Logistics } from './logistics'
 import { TaxProvider } from './taxProvider'
 import { TaxProvider2 } from './taxProvider2'
 import { TaxProviderIntegrator } from './taxProviderIntegrator'
+import { TaxProvider_default } from './taxProvider_default'
 
 export class Clients extends IOClients {
   public get checkout() {
@@ -31,6 +32,10 @@ export class Clients extends IOClients {
 
   public get taxProviderIntegrator() {
     return this.getOrSet('taxProviderIntegrator', TaxProviderIntegrator)
+  }
+
+  public get getTaxInformationDefault() {
+    return this.getOrSet('getTaxInformationDefault', TaxProvider_default)
   }
 
   public get orderForm() {

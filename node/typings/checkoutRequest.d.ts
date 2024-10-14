@@ -23,6 +23,7 @@ interface orderFormT {
 
 interface paymentDataT {
   updateStatus: string
+  payments: any
   giftCards: giftCardsT[]
 }
 

@@ -1,6 +1,6 @@
 {
   "name": "tax-middleware",
-  "vendor": "vtex",
+  "vendor": "roadrunnersportsqa",
   "version": "0.1.0",
   "title": "Tax Protocol Example",
   "description": "Reference app for Tax Protocol Services",
@@ -78,6 +78,11 @@
         "title": "Giftcards excluded from promo",
         "type": "string",
         "description": "Insert the exactly giftcard name, in case of more than one, separate with comma (,)"
+      },
+      "payments": {
+        "title": "Payments excluded from promo",
+        "type": "string",
+        "description": "Insert the exactly 'payment stringId', in case of more than one, separate with comma (,)"
       }
     }
   },

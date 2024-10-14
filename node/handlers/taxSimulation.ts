@@ -27,7 +27,7 @@ export async function taxSimulation(
 
   const {
     vtex: { workspace, account },
-    clients: { apps, orderForm, taxProvider, taxProviderIntegrator },
+    clients: { apps, orderForm, taxProvider, getTaxInformationDefault, taxProviderIntegrator },
   } = ctx
 
   
@@ -35,23 +35,32 @@ export async function taxSimulation(
   const taxIntegrated = await taxProviderIntegrator.getPayload(orderInformation)
 
 
-  console.log(orderInformation, taxIntegrated)
+  //console.log(orderInformation, taxIntegrated)
   
   
   const app: string = getAppId()
   const accountSettings = await apps.getAppSettings(app)
+
+
+  console.log(accountSettings.payments, taxIntegrated,orderInformation.paymentData.payments)
+
+  //payments excluded
+  const excludedPayments = accountSettings.payments.split(`,`).map((provider: string) => provider.trim());
+
+  const hasExcludePayments = excludedPayments.filter( (payment: any) => payment == orderInformation.paymentData.payments[0].paymentSystem).length;
   
+  let payload = getTaxInformationDefault.getTaxInformation(taxIntegrated)
+
   // V1 : returning with get from the orderForm
-  let orderFormParse = null;
-  const orderFormId = orderInformation?.orderFormId || orderInformation.taxApp?.fields?.orderFormId;
   
-  //console.log(orderFormId, accountSettings.appKey, accountSettings.appToken)
+  if(hasExcludePayments) {
+    let orderFormParse = null;
+    const orderFormId = orderInformation?.orderFormId || orderInformation.taxApp?.fields?.orderFormId;
+    
+    if(orderFormId && accountSettings.appKey && accountSettings.appToken) orderFormParse = await orderForm.getOrderForm(orderFormId, accountSettings.appKey, accountSettings.appToken)
 
-
-  if(orderFormId && accountSettings.appKey && accountSettings.appToken) orderFormParse = await orderForm.getOrderForm(orderFormId, accountSettings.appKey, accountSettings.appToken)
-
-  const payload = taxProvider.getTaxInformation(orderFormParse, taxIntegrated, accountSettings.giftCards)
-
+    payload = taxProvider.getTaxInformation(orderFormParse, taxIntegrated, accountSettings.giftCards)
+  }
 
   // V2 : returning without get from the orderForm
   // let gift = 0;

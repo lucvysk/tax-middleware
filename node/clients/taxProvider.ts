@@ -11,7 +11,7 @@ export class TaxProvider extends ExternalClient {
     taxIntegrated: any,
     giftCards: string
   ) {
-    console.log(`orderInformation`,orderInformation)
+    //console.log(`orderInformation`,orderInformation)
     
     if(orderInformation) {
       const totalDiscounts = orderInformation.totalizers.find( (tot: { name: string; }) => tot.name == 'Discounts Total')?.value || 0;
