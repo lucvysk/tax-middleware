@@ -69,7 +69,6 @@ export async function taxSimulation(
   
   // Parsing the tax information that was retrieved to the correct format
   const expectedResponse = parseProviderToVtex(payload, adjustment,orderInformation)
-  console.log(expectedResponse)
 
   // Mounting the response body
   ctx.body = {
