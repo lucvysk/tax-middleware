@@ -27,40 +27,36 @@ export async function taxSimulation(
 
   const {
     vtex: { workspace, account },
-    clients: { apps, orderForm, taxProvider, getTaxInformationDefault, taxProviderIntegrator },
+    clients: { apps, orderForm, discountAdjustment, getTaxInformationDefault, taxProviderIntegrator },
   } = ctx
-
   
   const orderInformation = await parseVtexToProvider(body)
-  const taxIntegrated = await taxProviderIntegrator.getPayload(orderInformation)
-
-
-  //console.log(orderInformation, taxIntegrated)
-  
   
   const app: string = getAppId()
   const accountSettings = await apps.getAppSettings(app)
 
-
-  console.log(accountSettings.payments, taxIntegrated,orderInformation.paymentData.payments)
-
   //payments excluded
-  const excludedPayments = accountSettings.payments.split(`,`).map((provider: string) => provider.trim());
-
+  const excludedPayments = accountSettings?.payments.split(`,`).map((provider: string) => provider.trim());
   const hasExcludePayments = excludedPayments.filter( (payment: any) => payment == orderInformation.paymentData.payments[0].paymentSystem).length;
-  
-  let payload = getTaxInformationDefault.getTaxInformation(taxIntegrated)
 
   // V1 : returning with get from the orderForm
-  
+  let adjustment : any = 0;
   if(hasExcludePayments) {
     let orderFormParse = null;
     const orderFormId = orderInformation?.orderFormId || orderInformation.taxApp?.fields?.orderFormId;
     
     if(orderFormId && accountSettings.appKey && accountSettings.appToken) orderFormParse = await orderForm.getOrderForm(orderFormId, accountSettings.appKey, accountSettings.appToken)
-
-    payload = taxProvider.getTaxInformation(orderFormParse, taxIntegrated, accountSettings.giftCards)
+    adjustment = discountAdjustment.getDiscountAdjustment(orderFormParse, accountSettings.giftCards)
   }
+
+  if(adjustment) {
+    orderInformation.items.map( (item : any) => {
+      return item.discountPrice = item.discountPrice + (adjustment / orderInformation.items.length)
+    })
+  }
+
+  const taxIntegrated = await taxProviderIntegrator.getPayload(orderInformation)
+  let payload = getTaxInformationDefault.getTaxInformation(taxIntegrated)
 
   // V2 : returning without get from the orderForm
   // let gift = 0;
@@ -69,11 +65,9 @@ export async function taxSimulation(
   // }
   // const payload = taxProvider2.getTaxInformation(orderInformation, taxIntegrated, gift)
   
-
-
   // Parsing the tax information that was retrieved to the correct format
-  const expectedResponse = parseProviderToVtex(payload)
-  //console.log(expectedResponse)
+  const expectedResponse = parseProviderToVtex(payload, adjustment,orderInformation)
+  console.log(expectedResponse)
 
   // Mounting the response body
   ctx.body = {

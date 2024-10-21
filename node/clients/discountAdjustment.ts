@@ -1,14 +1,13 @@
 import { ExternalClient, InstanceOptions, IOContext } from '@vtex/api'
 
-export class TaxProvider extends ExternalClient {
+export class DiscountAdjustment extends ExternalClient {
   constructor(ctx: IOContext, options?: InstanceOptions) {
     // The first argument is the base URl of your provider API endpoint
     super('baseURL', ctx, options)
   }
 
-  public getTaxInformation(
+  public getDiscountAdjustment(
     orderInformation: any,
-    taxIntegrated: any,
     giftCards: string
   ) {
     //console.log(`orderInformation`,orderInformation)
@@ -36,22 +35,23 @@ export class TaxProvider extends ExternalClient {
       //   value: adjust / 100,
       // })
 
-      console.log(`adjust`,adjust)
 
-      if(adjust) {
-        taxIntegrated.itemTaxResponse.map((prodTax: any) => {
-          prodTax.taxes.push({
-            name: 'DiscountAdjust@custom',
-            description: 'Promo Adjustment',
-            value: adjust / orderInformation.items.length / 100,
-          })
-          return prodTax
-        })
-      }
+      return adjust/100
+
+      // if(adjust) {
+      //   taxIntegrated.itemTaxResponse.map((prodTax: any) => {
+      //     prodTax.taxes.push({
+      //       name: 'DiscountAdjust@custom',
+      //       description: 'Promo Adjustment',
+      //       value: adjust / orderInformation.items.length / 100,
+      //     })
+      //     return prodTax
+      //   })
+      // }
       
     } 
 
-    return taxIntegrated.itemTaxResponse
+    return null
     
   }
 }

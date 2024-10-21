@@ -4,7 +4,7 @@ import OrderForm from './orderform'
 import { Catalog } from './catalog'
 import { Checkout } from './checkout'
 import { Logistics } from './logistics'
-import { TaxProvider } from './taxProvider'
+import { DiscountAdjustment } from './discountAdjustment'
 import { TaxProvider2 } from './taxProvider2'
 import { TaxProviderIntegrator } from './taxProviderIntegrator'
 import { TaxProvider_default } from './taxProvider_default'
@@ -22,8 +22,8 @@ export class Clients extends IOClients {
     return this.getOrSet('catalog', Catalog)
   }
 
-  public get taxProvider() {
-    return this.getOrSet('taxProvider', TaxProvider)
+  public get discountAdjustment() {
+    return this.getOrSet('discountAdjustment', DiscountAdjustment)
   }
 
   public get taxProvider2() {
