@@ -34,25 +34,27 @@ export async function taxSimulation(
   
   const app: string = getAppId()
   const accountSettings = await apps.getAppSettings(app)
-
-  //payments excluded
-  const excludedPayments = accountSettings?.payments.split(`,`).map((provider: string) => provider.trim());
-  const hasExcludePayments = excludedPayments.filter( (payment: any) => payment == orderInformation.paymentData.payments[0].paymentSystem).length;
-
-  // V1 : returning with get from the orderForm
   let adjustment : any = 0;
-  if(hasExcludePayments) {
-    let orderFormParse = null;
-    const orderFormId = orderInformation?.orderFormId || orderInformation.taxApp?.fields?.orderFormId;
-    
-    if(orderFormId && accountSettings.appKey && accountSettings.appToken) orderFormParse = await orderForm.getOrderForm(orderFormId, accountSettings.appKey, accountSettings.appToken)
-    adjustment = discountAdjustment.getDiscountAdjustment(orderFormParse, accountSettings.giftCards)
-  }
 
-  if(adjustment) {
-    orderInformation.items.map( (item : any) => {
-      return item.discountPrice = item.discountPrice + (adjustment / orderInformation.items.length)
-    })
+  if(accountSettings) {
+    //payments excluded
+    const excludedPayments = accountSettings?.payments?.split(`,`).map((provider: string) => provider.trim());
+    const hasExcludePayments = excludedPayments.filter( (payment: any) => payment == orderInformation.paymentData.payments[0].paymentSystem).length;
+
+    // V1 : returning with get from the orderForm
+    if(hasExcludePayments) {
+      let orderFormParse = null;
+      const orderFormId = orderInformation?.orderFormId || orderInformation.taxApp?.fields?.orderFormId;
+      
+      if(orderFormId && accountSettings.appKey && accountSettings.appToken) orderFormParse = await orderForm.getOrderForm(orderFormId, accountSettings.appKey, accountSettings.appToken)
+      adjustment = discountAdjustment.getDiscountAdjustment(orderFormParse, accountSettings.giftCards)
+    }
+
+    if(adjustment) {
+      orderInformation.items.map( (item : any) => {
+        return item.discountPrice = item.discountPrice + (adjustment / orderInformation.items.length)
+      })
+    }
   }
 
   const taxIntegrated = await taxProviderIntegrator.getPayload(orderInformation)
