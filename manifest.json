@@ -67,11 +67,13 @@
       "appKey": {
         "title": "App Key",
         "type": "string",
+        "format": "password",
         "description": "Appkey for request"
       },
       "appToken": {
         "title": "App Token",
         "type": "string",
+        "format": "password",
         "description": "App token for request"
       },
       "giftCards": {
