@@ -53,7 +53,7 @@ export async function taxSimulation(
       if(
         orderFormParse?.ratesAndBenefitsData?.rateAndBenefitsIdentifiers?.filter( (promo:any) => promo.id == accountSettings.promoId)
       ) {
-        adjustment = discountAdjustment.getDiscountAdjustment(orderFormParse, accountSettings.giftCards)
+        adjustment = discountAdjustment.getDiscountAdjustment(orderFormParse, accountSettings.giftCards, accountSettings.promoId)
       }
     }
 

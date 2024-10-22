@@ -8,13 +8,13 @@ export class DiscountAdjustment extends ExternalClient {
 
   public getDiscountAdjustment(
     orderInformation: any,
-    giftCards: string
+    giftCards: string,
+    promoId: any
   ) {
-    //console.log(`orderInformation`,orderInformation)
     
     if(orderInformation) {
-      const totalDiscounts = orderInformation.totalizers.find( (tot: { name: string; }) => tot.name == 'Discounts Total')?.value || 0;
-      const total = orderInformation.totalizers.find( (tot: { name: string; }) => tot.name == 'Items Total')?.value || 0;
+      //const totalDiscounts = orderInformation.totalizers.find( (tot: { name: string; }) => tot.name == 'Discounts Total')?.value || 0;
+      //const total = orderInformation.totalizers.find( (tot: { name: string; }) => tot.name == 'Items Total')?.value || 0;
       //const shipping = orderInformation.totalizers.find( tot => tot.name == 'Shipping Total')?.value || 0;
       
       const giftCardsProvidersArray = giftCards.split(',').map(provider => provider.trim());
@@ -22,32 +22,43 @@ export class DiscountAdjustment extends ExternalClient {
 
       const giftCard =  giftCardsSum || 0;
 
-      const percentageDiscount = Math.abs(totalDiscounts) / total
+      
+      //const percentageDiscount = Math.abs(totalDiscounts) / total
+      //const adjust = giftCard ? giftCard * (1 - (1 - percentageDiscount)) || 0 : 0; // Old Formula by @Higa
 
-      //const totalAdjusted = ((total - giftCard) * ((1-percentageDiscount))) + shipping;
-      const adjust = giftCard ? giftCard * (1 - (1 - percentageDiscount)) || 0 : 0
 
-      //console.log(`totalDiscounts ${totalDiscounts} total: ${total}`, `percentageDiscount; ${percentageDiscount}`, `giftCard: ${giftCard}`, `adjust: ${adjust/100}`)
+      const vipItems = orderInformation.items.filter( (item:any) => 
+        item.priceTags.some( (tag:any) => tag.identifier === promoId)
+      );
 
-      // taxIntegrated.itemTaxResponse[0].taxes.push({
-      //   name: 'DiscountAdjust@custom',
-      //   description: 'Promo Adjustment',
-      //   value: adjust / 100,
-      // })
+      const totalPriceVipItems = vipItems.reduce((sum: any, item: { sellingPrice: any; }) => sum + item.sellingPrice, 0);
+      const totalListPriceVipItems = vipItems.reduce((sum: any, item: { listPrice: any; }) => sum + item.listPrice, 0);
+
+      const nonVipItems = orderInformation.items.filter( (item:any) => 
+        !item.priceTags.some( (tag:any) => tag.identifier === promoId)
+      );
+      const totalPriceNonVipItems = nonVipItems.reduce((sum: any, item: { sellingPrice: any; }) => sum + item.sellingPrice, 0);
+
+      const totalMath1 = ( (totalPriceVipItems-giftCard)*(totalPriceVipItems/totalListPriceVipItems) ) + totalPriceNonVipItems
+      const totalMath2 = ( (totalPriceVipItems*(totalPriceVipItems/totalListPriceVipItems)-giftCard) ) + totalPriceNonVipItems
+      const adjust = totalMath1 > totalMath2 ? totalMath1 - totalMath2 : 0
+
+      // console.log( `
+      //   totalPriceVipItems: ${totalPriceVipItems},
+      //   totalListPriceVipItems: ${totalListPriceVipItems},
+      //   discounts VIP itens: ${totalPriceVipItems/totalListPriceVipItems},
+      //   totalPriceNonVipItems: ${totalPriceNonVipItems},
+      //   giftCard: ${giftCard},
+      //   totalMath1: ${totalMath1},
+      //   totalMath2: ${totalMath2},
+      //   adjust: ${adjust},
+      // `)
+      //console.log(`totalDiscounts ${totalDiscounts} total: ${total}`, `percentageDiscount; ${percentageDiscount}`, `giftCard: ${giftCard}, totalVipItems: ${totalPriceVipItems}`)
+
 
 
       return adjust/100
 
-      // if(adjust) {
-      //   taxIntegrated.itemTaxResponse.map((prodTax: any) => {
-      //     prodTax.taxes.push({
-      //       name: 'DiscountAdjust@custom',
-      //       description: 'Promo Adjustment',
-      //       value: adjust / orderInformation.items.length / 100,
-      //     })
-      //     return prodTax
-      //   })
-      // }
       
     } 
 
@@ -55,3 +66,4 @@ export class DiscountAdjustment extends ExternalClient {
     
   }
 }
+//https://vysk--roadrunnersportsqa.myvtex.com/checkout/cart/add/?sku=994&qty=1&seller=rrsaqarlington&sc=1&sku=4&qty=1&seller=1&sc=1&sku=509352&qty=1&seller=1&sc=1
