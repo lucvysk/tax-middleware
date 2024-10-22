@@ -36,18 +36,25 @@ export async function taxSimulation(
   const accountSettings = await apps.getAppSettings(app)
   let adjustment : any = 0;
 
+  
+
   if(accountSettings) {
     //payments excluded
     const excludedPayments = accountSettings?.payments?.split(`,`).map((provider: string) => provider.trim());
     const hasExcludePayments = excludedPayments ? excludedPayments.filter( (payment: any) => payment == orderInformation?.paymentData?.payments[0]?.paymentSystem).length : 0;
-
+    
     // V1 : returning with get from the orderForm
     if(hasExcludePayments) {
       let orderFormParse = null;
       const orderFormId = orderInformation?.orderFormId || orderInformation.taxApp?.fields?.orderFormId;
       
       if(orderFormId && accountSettings.appKey && accountSettings.appToken) orderFormParse = await orderForm.getOrderForm(orderFormId, accountSettings.appKey, accountSettings.appToken)
-      adjustment = discountAdjustment.getDiscountAdjustment(orderFormParse, accountSettings.giftCards)
+
+      if(
+        orderFormParse?.ratesAndBenefitsData?.rateAndBenefitsIdentifiers?.filter( (promo:any) => promo.id == accountSettings.promoId)
+      ) {
+        adjustment = discountAdjustment.getDiscountAdjustment(orderFormParse, accountSettings.giftCards)
+      }
     }
 
     if(adjustment) {
