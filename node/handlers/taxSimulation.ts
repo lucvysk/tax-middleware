@@ -39,7 +39,7 @@ export async function taxSimulation(
   if(accountSettings) {
     //payments excluded
     const excludedPayments = accountSettings?.payments?.split(`,`).map((provider: string) => provider.trim());
-    const hasExcludePayments = excludedPayments.filter( (payment: any) => payment == orderInformation.paymentData.payments[0].paymentSystem).length;
+    const hasExcludePayments = excludedPayments ? excludedPayments.filter( (payment: any) => payment == orderInformation?.paymentData?.payments[0]?.paymentSystem).length : 0;
 
     // V1 : returning with get from the orderForm
     if(hasExcludePayments) {

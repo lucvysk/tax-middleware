@@ -85,6 +85,11 @@
         "title": "Payments excluded from promo",
         "type": "string",
         "description": "Insert the exactly 'payment stringId', in case of more than one, separate with comma (,)"
+      },
+      "promoId": {
+        "title": "Vip Savings Promo Id",
+        "type": "string",
+        "description": "Insert the exactly 'promoId', in case of more than one, separate with comma (,)"
       }
     }
   },
