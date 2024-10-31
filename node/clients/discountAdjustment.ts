@@ -48,15 +48,15 @@ export class DiscountAdjustment extends ExternalClient {
         return total + discountSum;
       }, 0);
 
-      const totalNonVipDiscounts = orderInformation.items.reduce((total:any, item: any) => {
+      const totalNonVipDiscounts = vipItems.reduce((total:any, item: any) => {
         const discountSum = item.priceTags
             .filter((tag: any) => !promoId.includes(tag.identifier) && ~tag.name.indexOf(`discount@price`))
             .reduce((sum: number, tag: any) => sum + tag.rawValue, 0);
         return total + discountSum;
       }, 0);
 
-      const percetagelNonVipDiscounts = ( totalNonVipDiscounts/(total/100)) * 100;
-      const percetagelVipDiscounts = (totalListPriceVipItems/100 ) / Math.abs(totalVipDiscounts);
+      const percetagelNonVipDiscounts = (Math.abs(totalNonVipDiscounts) / ((total/100)  - Math.abs(totalVipDiscounts) ))*100;
+      const percetagelVipDiscounts = Math.abs(totalVipDiscounts*100) / ( (totalListPriceVipItems/100) -  Math.abs(totalNonVipDiscounts));
 
       const nominalValueVipDiscount = (totalListPriceVipItems/100 - giftCardsSum/100) / percetagelVipDiscounts;
       const nominalValueNonVipDiscount = (total/100 - Math.abs(nominalValueVipDiscount)) * percetagelNonVipDiscounts/100;
