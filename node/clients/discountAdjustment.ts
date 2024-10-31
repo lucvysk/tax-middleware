@@ -33,6 +33,29 @@ export class DiscountAdjustment extends ExternalClient {
       const nonVipItems = orderInformation.items.filter( (item:any) => 
         !item.priceTags.some( (tag:any) => promoId.includes(tag.identifier))
       );
+
+
+      // const promosApplied = orderInformation.items.map( (item : any) => {
+
+      //   let price = (item.price/100) * item.quantity;
+        
+
+      //   const pricet = item.priceTags
+      //       .filter((tag : any) => ~tag.name.indexOf(`discount@price`))
+      //       .map((tag : any)  => {
+      //       const percentage = (Math.abs(tag.rawValue) / (price) ) * 100;
+      //       price = price + tag.rawValue;
+      //       return {
+      //           identifier: tag.identifier,
+      //           percentage: percentage.toFixed(2) 
+      //       }
+        
+      //   })
+    
+      //   return pricet.length ? pricet[0] : false
+    
+      // })
+
   
 
       const totalPriceVipItems = vipItems?.reduce((sum: any, item: { sellingPrice: any; quantity: any }) => sum + item.sellingPrice * item.quantity, 0);
@@ -70,6 +93,8 @@ export class DiscountAdjustment extends ExternalClient {
       const adjust = totalMath1 > totalMath2 ? totalMath1 - totalMath2 : 0
 
 
+
+
       console.log( `
       total: ${total},
       totalPriceVipItems: ${totalPriceVipItems},
@@ -86,19 +111,6 @@ export class DiscountAdjustment extends ExternalClient {
       adjust2: ${adjust2},
       old adjust: ${adjust},
       `)
-
-      // console.log( `
-      //   totalPriceVipItems: ${totalPriceVipItems},
-      //   totalListPriceVipItems: ${totalListPriceVipItems},
-      //   discounts VIP itens: ${totalPriceVipItems/totalListPriceVipItems},
-      //   totalPriceNonVipItems: ${totalPriceNonVipItems},
-      //   giftCard: ${giftCard},
-      //   totalMath1: ${totalMath1},
-      //   totalMath2: ${totalMath2},
-      //   adjust: ${adjust},
-      // `)
-      //console.log(`totalDiscounts ${totalDiscounts} total: ${total}`, `percentageDiscount; ${percentageDiscount}`, `giftCard: ${giftCard}, totalVipItems: ${totalPriceVipItems}`)
-
 
 
       return adjust2
