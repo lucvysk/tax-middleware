@@ -31,8 +31,6 @@ export class DiscountAdjustment extends ExternalClient {
         item.priceTags.some( (tag:any) => promoId.includes(tag.identifier))
       );
 
-      console.log(vipItems)
-
       const totalPriceVipItems = vipItems?.reduce((sum: any, item: { sellingPrice: any; quantity: any }) => sum + item.sellingPrice * item.quantity, 0);
       const totalListPriceVipItems = vipItems?.reduce((sum: any, item: { listPrice: any; quantity: any }) => sum + item.listPrice * item.quantity, 0);
 
