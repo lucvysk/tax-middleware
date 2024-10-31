@@ -7,7 +7,7 @@ export class TaxProviderIntegrator extends ExternalClient {
   constructor(ctx: IOContext, options?: InstanceOptions) {
     super(`http://${ctx.workspace}--${ctx.account}.myvtex.com`, ctx, {
       ...options,
-      timeout:3000,
+      timeout:4000,
       headers: {
         VtexIdclientAutCookie: ctx.authToken,
         'X-Vtex-Use-Https': 'true',

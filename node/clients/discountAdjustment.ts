@@ -51,9 +51,9 @@ export class DiscountAdjustment extends ExternalClient {
       }, 0);
 
       const percetagelNonVipDiscounts = ( totalNonVipDiscounts/(total/100)) * 100;
-      const percetagelVipDiscounts = (total/100 + totalNonVipDiscounts) / totalVipDiscounts;
+      const percetagelVipDiscounts = (totalListPriceVipItems/100 ) / Math.abs(totalVipDiscounts);
 
-      const nominalValueVipDiscount = (total/100 - giftCardsSum/100) / percetagelVipDiscounts;
+      const nominalValueVipDiscount = (totalListPriceVipItems/100 - giftCardsSum/100) / percetagelVipDiscounts;
       const nominalValueNonVipDiscount = (total/100 - Math.abs(nominalValueVipDiscount)) * percetagelNonVipDiscounts/100;
       const adjust2 = (total/100 - giftCardsSum/100 - Math.abs(nominalValueVipDiscount) - Math.abs(nominalValueNonVipDiscount) ) - (total/100 - giftCardsSum/100 + totalVipDiscounts + totalNonVipDiscounts);
 
