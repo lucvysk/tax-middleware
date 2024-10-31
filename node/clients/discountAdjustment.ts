@@ -14,7 +14,7 @@ export class DiscountAdjustment extends ExternalClient {
     
     if(orderInformation) {
       //const totalDiscounts = orderInformation.totalizers.find( (tot: { name: string; }) => tot.name == 'Discounts Total')?.value || 0;
-      //const total = orderInformation.totalizers.find( (tot: { name: string; }) => tot.name == 'Items Total')?.value || 0;
+      const total = orderInformation.totalizers.find( (tot: { name: string; }) => tot.name == 'Items Total')?.value || 0;
       //const shipping = orderInformation.totalizers.find( tot => tot.name == 'Shipping Total')?.value || 0;
       
       const giftCardsProvidersArray = giftCards.split(',').map(provider => provider.trim());
@@ -28,20 +28,61 @@ export class DiscountAdjustment extends ExternalClient {
 
 
       const vipItems = orderInformation.items.filter( (item:any) => 
-        item.priceTags.some( (tag:any) => tag.identifier === promoId)
+        item.priceTags.some( (tag:any) => promoId.includes(tag.identifier))
       );
 
-      const totalPriceVipItems = vipItems.reduce((sum: any, item: { sellingPrice: any; }) => sum + item.sellingPrice, 0);
-      const totalListPriceVipItems = vipItems.reduce((sum: any, item: { listPrice: any; }) => sum + item.listPrice, 0);
+      console.log(vipItems)
+
+      const totalPriceVipItems = vipItems?.reduce((sum: any, item: { sellingPrice: any; quantity: any }) => sum + item.sellingPrice * item.quantity, 0);
+      const totalListPriceVipItems = vipItems?.reduce((sum: any, item: { listPrice: any; quantity: any }) => sum + item.listPrice * item.quantity, 0);
+
+      const totalVipDiscounts = vipItems.reduce((total:any, item: any) => {
+        const discountSum = item.priceTags
+            .filter((tag: any) => promoId.includes(tag.identifier))
+            .reduce((sum: number, tag: any) => sum + tag.rawValue, 0);
+    
+        return total + discountSum;
+      }, 0);
+
+      const totalNonVipDiscounts = vipItems.reduce((total:any, item: any) => {
+        const discountSum = item.priceTags
+            .filter((tag: any) => !promoId.includes(tag.identifier) && ~tag.name.indexOf(`discount@price`))
+            .reduce((sum: number, tag: any) => sum + tag.rawValue, 0);
+    
+        return total + discountSum;
+      }, 0);
+
+      const percetagelNonVipDiscounts = ( totalNonVipDiscounts/(total/100)) * 100;
+      const percetagelVipDiscounts = (total/100 + totalNonVipDiscounts) / totalVipDiscounts;
+
+      const nominalValueVipDiscount = (total/100 - giftCardsSum/100) / percetagelVipDiscounts;
+      const nominalValueNonVipDiscount = (total/100 - Math.abs(nominalValueVipDiscount)) * percetagelNonVipDiscounts/100;
+      const adjust2 = (total/100 - giftCardsSum/100 - Math.abs(nominalValueVipDiscount) - Math.abs(nominalValueNonVipDiscount) ) - (total/100 - giftCardsSum/100 + totalVipDiscounts + totalNonVipDiscounts);
 
       const nonVipItems = orderInformation.items.filter( (item:any) => 
         !item.priceTags.some( (tag:any) => tag.identifier === promoId)
       );
-      const totalPriceNonVipItems = nonVipItems.reduce((sum: any, item: { sellingPrice: any; }) => sum + item.sellingPrice, 0);
+      const totalPriceNonVipItems = nonVipItems?.reduce((sum: any, item: { sellingPrice: any; }) => sum + item.sellingPrice, 0);
 
       const totalMath1 = ( (totalPriceVipItems-giftCard)*(totalPriceVipItems/totalListPriceVipItems) ) + totalPriceNonVipItems
       const totalMath2 = ( (totalPriceVipItems*(totalPriceVipItems/totalListPriceVipItems)-giftCard) ) + totalPriceNonVipItems
       const adjust = totalMath1 > totalMath2 ? totalMath1 - totalMath2 : 0
+
+
+      console.log( `
+      total: ${total},
+      giftCardsSum: ${giftCardsSum},
+      totalListPriceVipItems: ${totalListPriceVipItems},
+      totalPriceVipItems: ${totalPriceVipItems},
+      totalVipDiscounts: ${totalVipDiscounts},
+      totalNonVipDiscounts: ${totalNonVipDiscounts},
+      percetagelVipDiscounts: ${percetagelVipDiscounts},
+      percetagelNonVipDiscounts: ${percetagelNonVipDiscounts},
+      nominalValueVipDiscount: ${nominalValueVipDiscount},
+      nominalValueNonVipDiscount: ${nominalValueNonVipDiscount},
+      adjust2: ${adjust2},
+      old adjust: ${adjust},
+      `)
 
       // console.log( `
       //   totalPriceVipItems: ${totalPriceVipItems},
@@ -57,7 +98,7 @@ export class DiscountAdjustment extends ExternalClient {
 
 
 
-      return adjust/100
+      return adjust2
 
       
     } 
