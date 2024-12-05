@@ -1,5 +1,72 @@
 import { ExternalClient, InstanceOptions, IOContext } from '@vtex/api'
 
+function sumGiftCardWithIdentifier(orderForm: any, giftCardsProviders:string) {
+  if (!orderForm?.paymentData?.giftCards || !giftCardsProviders) {
+    return 0;
+  }
+
+  const providers = giftCardsProviders
+    .split(",")
+    .map((provider) => provider.trim());
+
+  return orderForm.paymentData.giftCards
+    .filter((card: any) => providers.includes(card.provider))
+    .reduce((total: number, card:any) => total + card.value, 0);
+}
+
+function sumPriceWithIdentifier(orderForm: any, vipPromosId: string[]): number {
+  return orderForm.items.reduce((totalPrice: number, item: any) => {
+    const hasIdentifier = item.priceTags.some((priceTag: any) =>
+      vipPromosId.includes(priceTag.identifier)
+    );
+
+    return hasIdentifier ? totalPrice + item.price : totalPrice;
+  }, 0);
+}
+
+function findHighestVipPercentage(orderForm: any) {
+  return orderForm.ratesAndBenefitsData.rateAndBenefitsIdentifiers.reduce(
+    (highestVipPercentage: number, rateAndBenefit: any) => {
+      const vipPercentage = parseFloat(
+        rateAndBenefit.additionalInfo?.vip_percentage || 0
+      );
+      return !isNaN(vipPercentage) && vipPercentage > highestVipPercentage
+        ? vipPercentage
+        : highestVipPercentage;
+    },
+    0
+  );
+}
+
+function calculateExpectedVipSavings(
+  vipElegibleItemPrice: number,
+  rewardsCashApplied: number,
+  vipPercentage: number
+) {
+  const expectedVipSavings =
+    ((vipElegibleItemPrice - rewardsCashApplied) * vipPercentage) / 100;
+  return Math.max(0, expectedVipSavings);
+}
+
+function calculateGivenVipSavings(orderForm: any, vipPromosId: string[]): number {
+  return orderForm.items.reduce((totalVipSavings: number, item: any) => {
+    const vipSavings = item.priceTags.reduce((tagSum: number, priceTag: any) => {
+      return vipPromosId.includes(priceTag.identifier)
+        ? tagSum + (priceTag.value || 0)
+        : tagSum;
+    }, 0);
+
+    return totalVipSavings + vipSavings;
+  }, 0);
+}
+
+function calculateDiscountAdjust(givenVipSavings: number, expectedVipSavings: number): number{
+  const discountAdjust = ((givenVipSavings + expectedVipSavings))
+  const truncatedDiscount = Math.trunc(discountAdjust)
+
+  return Math.abs(truncatedDiscount);
+}
+
 export class DiscountAdjustment extends ExternalClient {
   constructor(ctx: IOContext, options?: InstanceOptions) {
     // The first argument is the base URl of your provider API endpoint
@@ -9,117 +76,38 @@ export class DiscountAdjustment extends ExternalClient {
   public getDiscountAdjustment(
     orderInformation: any,
     giftCards: string,
-    promoId: any
+    promoId: string[]
   ) {
+    if(!orderInformation) return null
     
-    if(orderInformation) {
-      //const totalDiscounts = orderInformation.totalizers.find( (tot: { name: string; }) => tot.name == 'Discounts Total')?.value || 0;
-      const total = orderInformation.totalizers.find( (tot: { name: string; }) => tot.name == 'Items Total')?.value || 0;
-      //const shipping = orderInformation.totalizers.find( tot => tot.name == 'Shipping Total')?.value || 0;
-      
-      const giftCardsProvidersArray = giftCards.split(',').map(provider => provider.trim());
-      const giftCardsSum = orderInformation.paymentData?.giftCards?.filter((card: { provider: string; }) => giftCardsProvidersArray.includes(card.provider)).reduce((acc: any, card: { value: any; }) => acc + card.value, 0);
+    const rewardsCashApplied = sumGiftCardWithIdentifier(orderInformation, giftCards)
+    if(rewardsCashApplied <=0) return null
 
-      const giftCard =  giftCardsSum || 0;
+    const vipElegibleItemPrice = sumPriceWithIdentifier(
+      orderInformation,
+      promoId
+    )
+    const vipPercentage = findHighestVipPercentage(orderInformation);
 
-      
-      //const percentageDiscount = Math.abs(totalDiscounts) / total
-      //const adjust = giftCard ? giftCard * (1 - (1 - percentageDiscount)) || 0 : 0; // Old Formula by @Higa
+    const expectedVipSavings = calculateExpectedVipSavings(
+      vipElegibleItemPrice,
+      rewardsCashApplied,
+      vipPercentage
+    );
 
-
-      const vipItems = orderInformation.items.filter( (item:any) => 
-        item.priceTags.some( (tag:any) => promoId.includes(tag.identifier))
-      );
-      const nonVipItems = orderInformation.items.filter( (item:any) => 
-        !item.priceTags.some( (tag:any) => promoId.includes(tag.identifier))
-      );
-
-
-      // const promosApplied = orderInformation.items.map( (item : any) => {
-
-      //   let price = (item.price/100) * item.quantity;
-        
-
-      //   const pricet = item.priceTags
-      //       .filter((tag : any) => ~tag.name.indexOf(`discount@price`))
-      //       .map((tag : any)  => {
-      //       const percentage = (Math.abs(tag.rawValue) / (price) ) * 100;
-      //       price = price + tag.rawValue;
-      //       return {
-      //           identifier: tag.identifier,
-      //           percentage: percentage.toFixed(2) 
-      //       }
-        
-      //   })
+    const givenVipSavings = calculateGivenVipSavings(orderInformation, promoId)
+    const discountAdjust = calculateDiscountAdjust(givenVipSavings, expectedVipSavings)
+    const vipSavingsAfterDiscountAdjust = (givenVipSavings) + discountAdjust
     
-      //   return pricet.length ? pricet[0] : false
-    
-      // })
+    console.log({ 
+      vipElegibleItemPrice, 
+      rewardsCashApplied, 
+      givenVipSavings, 
+      expectedVipSavings, 
+      discountAdjust, 
+      vipSavingsAfterDiscountAdjust
+    })
 
-  
-
-      const totalPriceVipItems = vipItems?.reduce((sum: any, item: { sellingPrice: any; quantity: any }) => sum + item.sellingPrice * item.quantity, 0);
-      const totalListPriceVipItems = vipItems?.reduce((sum: any, item: { listPrice: any; quantity: any }) => sum + item.listPrice * item.quantity, 0);
-
-      const totalPriceNonVipItems = nonVipItems?.reduce((sum: any, item: { sellingPrice: any; }) => sum + item.sellingPrice, 0);
-
-      const totalVipDiscounts = vipItems.reduce((total:any, item: any) => {
-        const discountSum = item.priceTags
-            .filter((tag: any) => promoId.includes(tag.identifier))
-            .reduce((sum: number, tag: any) => sum + tag.rawValue, 0);
-    
-        return total + discountSum;
-      }, 0);
-
-      const totalNonVipDiscounts = vipItems.reduce((total:any, item: any) => {
-        const discountSum = item.priceTags
-            .filter((tag: any) => !promoId.includes(tag.identifier) && ~tag.name.indexOf(`discount@price`))
-            .reduce((sum: number, tag: any) => sum + tag.rawValue, 0);
-        return total + discountSum;
-      }, 0);
-
-      const percetagelNonVipDiscounts = (Math.abs(totalNonVipDiscounts) / ((total/100)  - Math.abs(totalVipDiscounts) ))*100;
-      const percetagelVipDiscounts = Math.abs(totalVipDiscounts*100) / ( (totalListPriceVipItems/100) -  Math.abs(totalNonVipDiscounts));
-
-      const nominalValueVipDiscount = (totalListPriceVipItems/100 - giftCardsSum/100) / percetagelVipDiscounts;
-      const nominalValueNonVipDiscount = (total/100 - Math.abs(nominalValueVipDiscount)) * percetagelNonVipDiscounts/100;
-      const adjust2 = (total/100 - giftCardsSum/100 - Math.abs(nominalValueVipDiscount) - Math.abs(nominalValueNonVipDiscount) ) - (total/100 - giftCardsSum/100 + totalVipDiscounts + totalNonVipDiscounts);
-
-    
-     
-
-      const totalMath1 = ( (totalPriceVipItems-giftCard)*(totalPriceVipItems/totalListPriceVipItems) ) + totalPriceNonVipItems
-      const totalMath2 = ( (totalPriceVipItems*(totalPriceVipItems/totalListPriceVipItems)-giftCard) ) + totalPriceNonVipItems
-      const adjust = totalMath1 > totalMath2 ? totalMath1 - totalMath2 : 0
-
-
-
-
-      console.log( `
-      total: ${total},
-      totalPriceVipItems: ${totalPriceVipItems},
-      totalPriceNonVipItems: ${totalPriceNonVipItems},
-      giftCardsSum: ${giftCardsSum},
-      totalListPriceVipItems: ${totalListPriceVipItems},
-      totalPriceVipItems: ${totalPriceVipItems},
-      totalVipDiscounts: ${totalVipDiscounts},
-      totalNonVipDiscounts: ${totalNonVipDiscounts},
-      percetagelVipDiscounts: ${percetagelVipDiscounts},
-      percetagelNonVipDiscounts: ${percetagelNonVipDiscounts},
-      nominalValueVipDiscount: ${nominalValueVipDiscount},
-      nominalValueNonVipDiscount: ${nominalValueNonVipDiscount},
-      adjust2: ${adjust2},
-      old adjust: ${adjust},
-      `)
-
-
-      return adjust2
-
-      
-    } 
-
-    return null
-    
+    return discountAdjust
   }
 }
-//https://vysk--roadrunnersportsqa.myvtex.com/checkout/cart/add/?sku=994&qty=1&seller=rrsaqarlington&sc=1&sku=4&qty=1&seller=1&sc=1&sku=509352&qty=1&seller=1&sc=1
