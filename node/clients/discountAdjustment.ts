@@ -20,7 +20,7 @@ function sumPriceWithIdentifier(orderForm: any, vipPromosId: string[]): number {
       vipPromosId.includes(priceTag.identifier)
     );
 
-    return hasIdentifier ? totalPrice + item.price : totalPrice;
+    return hasIdentifier ? totalPrice + (item.price * item.quantity) : totalPrice;
   }, 0);
 }
 
