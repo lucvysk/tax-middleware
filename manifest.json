@@ -77,14 +77,9 @@
         "description": "App token for request"
       },
       "giftCards": {
-        "title": "Giftcards excluded from promo",
+        "title": "(Rewards Cash) Giftcards excluded from promo",
         "type": "string",
-        "description": "Insert the exactly giftcard name, in case of more than one, separate with comma (,)"
-      },
-      "payments": {
-        "title": "Payments excluded from promo",
-        "type": "string",
-        "description": "Insert the exactly 'payment stringId', in case of more than one, separate with comma (,)"
+        "description": "Insert the exactly giftcard provider name, in case of more than one, separate with comma (,)"
       },
       "promoId": {
         "title": "Vip Savings Promo Id",
