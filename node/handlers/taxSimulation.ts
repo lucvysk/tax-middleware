@@ -85,24 +85,39 @@ export async function taxSimulation(
       return item.discountPrice = item.discountPrice + discountAdjustPerItemIndex[i]
     })
   }
+  let expectedResponse;
+  try{
+    const taxIntegrated = await taxProviderIntegrator.getPayload(orderInformation)
+    let payload = getTaxInformationDefault.getTaxInformation(taxIntegrated)
+    expectedResponse = parseProviderToVtex(payload, discountAdjustPerItemIndex)
+    // Mounting the response body
+    ctx.body = {
+      hooks: [
+        {
+          major: 1,
+          url: `https://${workspace}--${account}.myvtex.com/app/tax-provider/oms/invoice`,
+        },
+      ],
+      itemTaxResponse: expectedResponse,
+    }
   
-  const taxIntegrated = await taxProviderIntegrator.getPayload(orderInformation)
-  let payload = getTaxInformationDefault.getTaxInformation(taxIntegrated)
-  const expectedResponse = parseProviderToVtex(payload, discountAdjustPerItemIndex)
+    // Necessary so the Checkout can understand body's format
+    ctx.set('Content-Type', 'application/vnd.vtex.checkout.minicart.v1+json')
+  
+    await next()
+  
+    }
+    catch{
+      await new Promise(r => setTimeout(r, 2000));
+      taxSimulation(ctx,next);
 
-  // Mounting the response body
-  ctx.body = {
-    hooks: [
-      {
-        major: 1,
-        url: `https://${workspace}--${account}.myvtex.com/app/tax-provider/oms/invoice`,
-      },
-    ],
-    itemTaxResponse: expectedResponse,
+      
+    }
+
   }
+  
+  
 
-  // Necessary so the Checkout can understand body's format
-  ctx.set('Content-Type', 'application/vnd.vtex.checkout.minicart.v1+json')
 
-  await next()
+
 }
